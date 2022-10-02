@@ -1,0 +1,7 @@
+---
+# handlers file for defenders
+
+- name: restart sshd
+  service: 
+    name: ssh
+    state: restarted

@@ -1,0 +1,53 @@
+---
+
+- name:  Install traffic.py
+  become: true
+  template:
+    src: ../templates/traffic.py.j2
+    dest: "{{ traffic_script_path }}"
+    owner: "root"
+    group: "root"
+    mode: '0500'
+
+- name:  Install config.py
+  become: true
+  template:
+    src: ../templates/config.py.j2
+    dest: "{{ traffic_config_path }}"
+    owner: "root"
+    group: "root"
+    mode: '0500'
+
+- name: Install traffic_script.sh
+  become: true
+  copy:
+    src: ../files/traffic_script.sh
+    dest: "{{ traffic_script_path2 }}"
+    owner: "root"
+    group: "root"
+    mode: '0500'
+
+- name: Install service (file)
+  become: true
+  template:
+    src: ../templates/traffic.service.j2
+    dest: "/etc/systemd/system/{{ traffic_service_name }}.service"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name:  Install service (symlink)
+  become: true
+  file:
+    state: link
+    src: "/etc/systemd/system/{{ traffic_service_name }}.service"
+    dest: "/etc/systemd/system/multi-user.target.wants/{{ traffic_service_name }}.service"
+
+- name: enable and start service
+  become: true
+  service:
+    name: "{{ traffic_service_name }}"
+    state: started
+    enabled: yes
+
+

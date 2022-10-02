@@ -1,0 +1,46 @@
+---
+
+- name: Initialize /etc/skel with desired configuration
+  copy:
+    src: ../files/skel/
+    dest: /etc/skel/
+    owner: root
+    group: root
+    mode: preserve
+  tag: [ 'skel' ]
+
+- name: Allow Password Authentication for SSH
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    backup: yes
+    regexp: "^PasswordAuthentication"
+    line: "PasswordAuthentication yes"
+  notify: restart sshd
+  tag: [ 'ssh' ]
+
+- name: Remove Password Requirement for sudo
+  lineinfile:
+    path: /etc/sudoers
+    backup: yes
+    regexp: "%wheel"
+    line: "%wheel\tALL=(ALL:ALL) NOPASSWD:ALL"
+  tag: [ 'sudo' ]
+
+- name: Add users from users.yml
+  user:
+    name: "{{ item }}"
+    comment: "{{ item }} user"
+    password: "{{ password | password_hash('sha512') }}"
+    create_home: yes
+    shell: /bin/bash
+    state: present
+  with_items: "{{ lookup('file', 'files/users.txt').splitlines() }}"
+  tag: [ 'users' ]
+
+- name: Make sudo members 
+  user:
+    name: "{{ item }}"
+    groups: [ wheel ]
+    append: yes
+  with_items: "{{ lookup('file', 'files/users.txt').splitlines() }}"
+  tag: [ 'users' ]
